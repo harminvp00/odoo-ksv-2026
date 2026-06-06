@@ -189,5 +189,27 @@ export const authController = {
         message: 'Password reset successful'
       });
     } catch (err) { next(err); }
+  },
+  getMe: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const { password: _, ...userWithoutPassword } = user;
+
+      res.json({
+        user: userWithoutPassword
+      });
+    } catch (err) { next(err); }
   }
 };
