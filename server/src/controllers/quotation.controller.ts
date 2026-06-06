@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/db';
+import { activityService } from '../services/activity.service';
 
 export const quotationController = {
   submitQuotation: async (req: Request, res: Response, next: NextFunction) => {
@@ -79,6 +80,28 @@ export const quotationController = {
           include: { lineItems: true }
         });
       });
+
+      if (quotation && status === 'SUBMITTED') {
+        const rfq = await prisma.rFQ.findUnique({ where: { id: rfqId } });
+        if (rfq) {
+          // Log Activity
+          await activityService.logActivity(
+            userId,
+            'RFQ',
+            `Quotation submitted for RFQ "${rfq.title}"`,
+            { quotationId: quotation.id, rfqId }
+          );
+
+          // Notify RFQ Creator (Procurement Officer)
+          await activityService.createNotification(
+            rfq.createdByUserId,
+            'RFQ',
+            'New Quotation Submitted',
+            `Vendor "${vendor.name}" has submitted a quotation for RFQ "${rfq.title}".`,
+            true
+          );
+        }
+      }
 
       res.status(201).json(quotation);
     } catch (err) {

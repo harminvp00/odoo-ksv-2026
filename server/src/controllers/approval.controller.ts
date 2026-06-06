@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/db';
+import { activityService } from '../services/activity.service';
 
 export const approvalController = {
   initiateApproval: async (req: Request, res: Response, next: NextFunction) => {
@@ -116,6 +117,25 @@ export const approvalController = {
           }
         });
       });
+
+      if (approval) {
+        // Log Activity
+        await activityService.logActivity(
+          userId,
+          'APPROVAL',
+          `Approval workflow initiated for Quotation against RFQ "${rfq.title}"`,
+          { approvalId: approval.id, rfqId }
+        );
+
+        // Notify L1 Approver
+        await activityService.createNotification(
+          officerId,
+          'APPROVAL',
+          'Approval Action Required',
+          `An approval workflow has been initiated for Quotation against RFQ "${rfq.title}". Your action is required.`,
+          true
+        );
+      }
 
       res.status(201).json(approval);
     } catch (err) {
@@ -326,6 +346,105 @@ export const approvalController = {
           return approvedApproval;
         }
       });
+
+      if (updatedApproval) {
+        // Fetch RFQ for titles/metadata
+        const rfq = await prisma.rFQ.findUnique({
+          where: { id: approval.rfqId },
+          include: { createdBy: true }
+        });
+        const vendor = await prisma.vendor.findUnique({
+          where: { id: approval.quotation.vendorId },
+          include: { user: true }
+        });
+        const rfqTitle = rfq?.title || 'RFQ';
+
+        if (action === 'REJECT') {
+          // Log Activity
+          await activityService.logActivity(
+            userId,
+            'APPROVAL',
+            `Approval workflow for Quotation rejected by user ${userId}`,
+            { approvalId: id, quotationId: approval.quotationId, rfqId: approval.rfqId }
+          );
+
+          // Notify RFQ Creator
+          if (rfq?.createdByUserId) {
+            await activityService.createNotification(
+              rfq.createdByUserId,
+              'APPROVAL',
+              'Approval Workflow Rejected',
+              `The approval workflow for RFQ "${rfqTitle}" has been rejected by the approver.`,
+              true
+            );
+          }
+
+          // Notify Vendor
+          if (vendor?.userId) {
+            await activityService.createNotification(
+              vendor.userId,
+              'APPROVAL',
+              'Quotation Rejected',
+              `Your quotation for RFQ "${rfqTitle}" has been rejected.`,
+              true
+            );
+          }
+        } else {
+          // APPROVED
+          // Check if there was a next step
+          const activeStepIndex = approval.chain.findIndex(step => step.status === 'PENDING');
+          const nextStep = approval.chain.find(step => step.stepNumber === approval.chain[activeStepIndex].stepNumber + 1);
+
+          if (nextStep) {
+            // Log Step approval
+            await activityService.logActivity(
+              userId,
+              'APPROVAL',
+              `Approval step ${approval.chain[activeStepIndex].stepNumber} approved by user ${userId}`,
+              { approvalId: id, stepNumber: approval.chain[activeStepIndex].stepNumber }
+            );
+
+            // Notify next step's user
+            await activityService.createNotification(
+              nextStep.userId,
+              'APPROVAL',
+              'Approval Action Required',
+              `You have a pending approval step for RFQ "${rfqTitle}". Please review.`,
+              true
+            );
+          } else {
+            // Fully approved!
+            await activityService.logActivity(
+              userId,
+              'APPROVAL',
+              `Approval workflow fully approved for RFQ "${rfqTitle}". Purchase Order auto-generated.`,
+              { approvalId: id, quotationId: approval.quotationId, rfqId: approval.rfqId }
+            );
+
+            // Notify RFQ Creator
+            if (rfq?.createdByUserId) {
+              await activityService.createNotification(
+                rfq.createdByUserId,
+                'APPROVAL',
+                'Approval Workflow Completed',
+                `The approval workflow for RFQ "${rfqTitle}" has been fully approved. A draft Purchase Order has been generated.`,
+                true
+              );
+            }
+
+            // Notify Vendor
+            if (vendor?.userId) {
+              await activityService.createNotification(
+                vendor.userId,
+                'APPROVAL',
+                'Quotation Selected',
+                `Congratulations! Your quotation for RFQ "${rfqTitle}" has been selected and approved.`,
+                true
+              );
+            }
+          }
+        }
+      }
 
       res.json(updatedApproval);
     } catch (err) {

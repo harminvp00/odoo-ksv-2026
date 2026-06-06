@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/db';
 import { generateInvoicePDF } from '../utils/pdf-generator';
 import { emailService } from '../services/email.service';
+import { activityService } from '../services/activity.service';
 
 export const invoiceController = {
   generateInvoice: async (req: Request, res: Response, next: NextFunction) => {
@@ -94,6 +95,27 @@ export const invoiceController = {
         });
       });
 
+      if (invoice) {
+        // Log Activity
+        await activityService.logActivity(
+          null,
+          'INVOICE',
+          `Invoice "${invoice.invoiceNumber}" generated against PO "${invoice.purchaseOrder.poNumber}"`,
+          { invoiceId: invoice.id, purchaseOrderId }
+        );
+
+        // Notify Vendor
+        if (invoice.purchaseOrder.vendor.userId) {
+          await activityService.createNotification(
+            invoice.purchaseOrder.vendor.userId,
+            'INVOICE',
+            'Invoice Generated',
+            `An official invoice "${invoice.invoiceNumber}" has been generated against Purchase Order "${invoice.purchaseOrder.poNumber}".`,
+            true
+          );
+        }
+      }
+
       res.status(201).json(invoice);
     } catch (err) {
       next(err);
@@ -179,6 +201,27 @@ export const invoiceController = {
           }
         }
       });
+
+      if (updatedInvoice) {
+        // Log Activity
+        await activityService.logActivity(
+          null,
+          'INVOICE',
+          `Invoice "${updatedInvoice.invoiceNumber}" status updated to ${status}`,
+          { invoiceId: id, status }
+        );
+
+        // Notify Vendor
+        if (updatedInvoice.purchaseOrder.vendor.userId) {
+          await activityService.createNotification(
+            updatedInvoice.purchaseOrder.vendor.userId,
+            'INVOICE',
+            'Invoice Update',
+            `Your Invoice "${updatedInvoice.invoiceNumber}" status has been updated to "${status}".`,
+            true
+          );
+        }
+      }
 
       res.json(updatedInvoice);
     } catch (err) {

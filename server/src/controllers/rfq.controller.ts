@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/db';
+import { activityService } from '../services/activity.service';
 
 export const rfqController = {
   createRFQ: async (req: Request, res: Response, next: NextFunction) => {
@@ -76,6 +77,30 @@ export const rfqController = {
           }
         });
       });
+
+      if (rfq) {
+        // Log Activity
+        await activityService.logActivity(createdByUserId, 'RFQ', `RFQ "${rfq.title}" created`, { rfqId: rfq.id });
+
+        // Notify Vendors
+        if (assignedVendorIds && assignedVendorIds.length > 0) {
+          const vendorsWithUsers = await prisma.vendor.findMany({
+            where: { id: { in: assignedVendorIds } },
+            include: { user: true }
+          });
+          for (const v of vendorsWithUsers) {
+            if (v.userId) {
+              await activityService.createNotification(
+                v.userId,
+                'RFQ',
+                'New RFQ Assignment',
+                `You have been assigned to RFQ "${rfq.title}". Please submit your quotation.`,
+                true
+              );
+            }
+          }
+        }
+      }
 
       res.status(201).json(rfq);
     } catch (err) {
