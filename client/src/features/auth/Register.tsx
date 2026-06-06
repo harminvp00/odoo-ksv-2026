@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import { authService } from '../../services/auth.service';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -9,16 +10,31 @@ export default function Register() {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     phone: '',
     role: 'PROCUREMENT_OFFICER',
     country: '',
     additionalInfo: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Mock Registration Complete. Please Login.');
-    navigate('/login');
+    setLoading(true);
+    setError('');
+    try {
+      await authService.register(formData);
+      alert('Registration Complete. Please Login.');
+      navigate('/login');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 
+                  err.response?.data?.errors?.[0]?.message || 
+                  'Registration failed. Please try again.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,6 +44,12 @@ export default function Register() {
           <h2 className="text-2xl font-bold tracking-tight">Create User Account</h2>
           <p className="text-sm text-slate-500 mt-1.5">Join VendorBridge ERP Workspace</p>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-lg">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -57,10 +79,27 @@ export default function Register() {
               required
             />
             <Input 
+              label="Password*" 
+              type="password" 
+              placeholder="•••••••• (min 6 chars)"
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Input 
               label="Phone number" 
               placeholder="Mobile/Office phone"
               value={formData.phone}
               onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            />
+            <Input 
+              label="Country" 
+              placeholder="Country base"
+              value={formData.country}
+              onChange={(e) => setFormData({...formData, country: e.target.value})}
             />
           </div>
 
@@ -77,12 +116,6 @@ export default function Register() {
                 <option value="MANAGER">Manager / Approver</option>
               </select>
             </div>
-            <Input 
-              label="Country" 
-              placeholder="Country base"
-              value={formData.country}
-              onChange={(e) => setFormData({...formData, country: e.target.value})}
-            />
           </div>
 
           <div className="flex flex-col space-y-1.5">
@@ -95,7 +128,9 @@ export default function Register() {
             />
           </div>
 
-          <Button type="submit" className="w-full py-3">Submit Registration</Button>
+          <Button type="submit" className="w-full py-3" disabled={loading}>
+            {loading ? 'Submitting Registration...' : 'Submit Registration'}
+          </Button>
         </form>
 
         <div className="mt-6 text-center text-xs text-slate-400">
