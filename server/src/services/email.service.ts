@@ -12,6 +12,10 @@ const transporter = nodemailer.createTransport({
     user: env.SMTP_USER,
     pass: env.SMTP_PASS,
   },
+  // Add tls block to bypass cert issues if using local/test SMTP relays
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 // Verify connection configuration
@@ -29,7 +33,7 @@ export const emailService = {
       logger.info(`Sending email to ${to} with subject "${subject}"`);
       
       const info = await transporter.sendMail({
-        from: `"${env.SMTP_USER}" <${env.SMTP_USER}>`,
+        from: `"VendorBridge" <${env.SMTP_USER}>`,
         to,
         subject,
         html: htmlContent,
@@ -39,7 +43,7 @@ export const emailService = {
       return true;
     } catch (err: any) {
       logger.error(`Failed to send email to ${to}: ${err.message}`);
-      return false;
+      throw err;
     }
   }
 };
