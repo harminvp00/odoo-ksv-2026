@@ -2,11 +2,12 @@ import nodemailer from 'nodemailer';
 import env from '../config/env';
 import logger from '../utils/logger';
 
-// Create a nodemailer transporter using environment configurations
+// Create nodemailer transport
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: env.SMTP_PORT === 465, // secure is true only for port 465 (SSL)
+  // Fallback to Gmail SMTP standard port 587 if host is Gmail and port is configured as 2525
+  port: env.SMTP_PORT === 2525 && env.SMTP_HOST.includes('gmail') ? 587 : env.SMTP_PORT,
+  secure: env.SMTP_PORT === 465,
   auth: {
     user: env.SMTP_USER,
     pass: env.SMTP_PASS,
@@ -17,21 +18,32 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Verify connection configuration
+transporter.verify((error, success) => {
+  if (error) {
+    logger.error(`SMTP Connection Error: ${error.message}`);
+  } else {
+    logger.info('SMTP Server is ready to take our messages');
+  }
+});
+
 export const emailService = {
   sendMail: async (to: string, subject: string, htmlContent: string) => {
-    logger.info(`Sending email to ${to} with subject "${subject}"`);
     try {
+      logger.info(`Sending email to ${to} with subject "${subject}"`);
+      
       const info = await transporter.sendMail({
         from: `"VendorBridge" <${env.SMTP_USER}>`,
         to,
         subject,
         html: htmlContent,
       });
+
       logger.info(`Email sent successfully: ${info.messageId}`);
       return true;
-    } catch (error) {
-      logger.error('Failed to send email:', error);
-      throw error;
+    } catch (err: any) {
+      logger.error(`Failed to send email to ${to}: ${err.message}`);
+      throw err;
     }
   }
 };
