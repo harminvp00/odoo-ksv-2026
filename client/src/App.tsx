@@ -15,6 +15,7 @@ import ActivityLogs from './features/activity/ActivityLogs';
 import ReportsAnalytics from './features/reports/ReportsAnalytics';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   return (
@@ -29,15 +30,15 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Dashboard / Workspace App Routes */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/vendors" element={<VendorsPage />} />
-            <Route path="/rfqs/create" element={<RFQCreate />} />
-            <Route path="/quotations/submit" element={<QuotationSubmit />} />
-            <Route path="/quotations/compare" element={<QuotationCompare />} />
-            <Route path="/approvals" element={<ApprovalWorkflow />} />
-            <Route path="/invoices" element={<POInvoiceDetail />} />
-            <Route path="/activity" element={<ActivityLogs />} />
-            <Route path="/reports" element={<ReportsAnalytics />} />
+            <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER', 'VENDOR']}><Dashboard /></ProtectedRoute>} />
+            <Route path="/vendors" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER']}><VendorsPage /></ProtectedRoute>} />
+            <Route path="/rfqs/create" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER']}><RFQCreate /></ProtectedRoute>} />
+            <Route path="/quotations/submit" element={<ProtectedRoute allowedRoles={['VENDOR']}><QuotationSubmit /></ProtectedRoute>} />
+            <Route path="/quotations/compare" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER']}><QuotationCompare /></ProtectedRoute>} />
+            <Route path="/approvals" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER']}><ApprovalWorkflow /></ProtectedRoute>} />
+            <Route path="/invoices" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER', 'VENDOR']}><POInvoiceDetail /></ProtectedRoute>} />
+            <Route path="/activity" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER']}><ActivityLogs /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute allowedRoles={['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER']}><ReportsAnalytics /></ProtectedRoute>} />
 
             {/* Redirects */}
             <Route path="/" element={<Navigate to="/dashboard" />} />

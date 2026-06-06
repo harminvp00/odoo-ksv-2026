@@ -20,7 +20,7 @@ export default function ResetPassword() {
     setError('');
 
     if (!token || !email) {
-      setError('Invalid or expired reset token link. Please request a new one.');
+      setError('Invalid or expired reset link. Please request a new link.');
       return;
     }
 
@@ -53,30 +53,31 @@ export default function ResetPassword() {
   const isLinkInvalid = !token || !email;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#070a0e] p-4">
-      <div className="w-full max-w-md bg-slate-900/60 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-md">
+    <div className="min-h-screen flex items-center justify-center bg-white p-6 font-sans">
+      <div className="w-full max-w-md bg-white border border-neutral-200/80 rounded-2xl p-8 shadow-premium select-none">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold tracking-tight">Reset Password</h2>
-          <p className="text-sm text-slate-500 mt-1.5">Enter your new secure password</p>
+          <h2 className="text-xl font-bold tracking-tight text-neutral-900">Reset Password</h2>
+          <p className="text-sm text-neutral-500 mt-1">Enter your new secure password</p>
         </div>
 
         {submitted ? (
-          <div className="text-center p-6 bg-emerald-950/20 border border-emerald-800/35 rounded-xl text-emerald-400 text-sm">
-            Password reset successful! You can now log in with your new password.
-            <div className="mt-6">
-              <Link to="/login" className="text-xs font-semibold uppercase text-emerald-400 hover:underline">Go to Login</Link>
+          <div className="p-6 bg-accent-successBg border border-accent-success/20 rounded-xl text-neutral-900 text-sm">
+            <p className="font-medium mb-3">Password reset successful!</p>
+            <p className="text-xs text-neutral-550 mb-4">You can now sign in with your new credentials.</p>
+            <div className="text-center">
+              <Link to="/login" className="text-xs font-bold uppercase text-neutral-900 hover:underline">Go to Login</Link>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {isLinkInvalid && (
-              <div className="p-3 bg-rose-950/20 border border-rose-800/35 rounded-xl text-rose-400 text-xs text-center">
-                Invalid or incomplete reset link. Please request a new link from the forgot password page.
+              <div className="p-3 bg-accent-dangerBg border border-accent-danger/20 rounded-xl text-accent-danger text-xs text-center font-medium">
+                Invalid or incomplete link. Please request a new password reset link.
               </div>
             )}
             
             {error && (
-              <div className="p-3 bg-rose-950/20 border border-rose-800/35 rounded-xl text-rose-400 text-xs text-center">
+              <div className="p-3 bg-accent-dangerBg border border-accent-danger/20 rounded-xl text-accent-danger text-xs text-center font-medium">
                 {error}
               </div>
             )}
@@ -101,12 +102,12 @@ export default function ResetPassword() {
               disabled={loading || isLinkInvalid}
             />
 
-            <Button type="submit" className="w-full py-3" disabled={loading || isLinkInvalid}>
+            <Button type="submit" className="w-full py-2.5 mt-2" disabled={loading || isLinkInvalid}>
               {loading ? 'Resetting...' : 'Reset Password'}
             </Button>
             
-            <div className="text-center text-xs">
-              <Link to="/login" className="text-slate-400 hover:text-slate-200">Return to Login</Link>
+            <div className="text-center text-xs pt-1">
+              <Link to="/login" className="text-neutral-500 hover:text-neutral-950 font-medium">Return to Login</Link>
             </div>
           </form>
         )}
@@ -114,3 +115,4 @@ export default function ResetPassword() {
     </div>
   );
 }
+

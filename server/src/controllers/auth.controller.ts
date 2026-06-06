@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/db';
 import env from '../config/env';
 import { emailService } from '../services/email.service';
+import logger from '../utils/logger';
 
 export const authController = {
   login: async (req: Request, res: Response, next: NextFunction) => {
@@ -34,14 +35,18 @@ export const authController = {
 
       // Send login alert email
       const localTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-      await emailService.sendMail(
-        user.email,
-        'VendorBridge Login Notification',
-        `<h3>New Login Alert</h3>
-         <p>Hello ${user.firstName},</p>
-         <p>A new login was detected on your VendorBridge account on <strong>${localTime} IST</strong>.</p>
-         <p>If this was not you, please reset your password immediately.</p>`
-      );
+      try {
+        await emailService.sendMail(
+          user.email,
+          'VendorBridge Login Notification',
+          `<h3>New Login Alert</h3>
+           <p>Hello ${user.firstName},</p>
+           <p>A new login was detected on your VendorBridge account on <strong>${localTime} IST</strong>.</p>
+           <p>If this was not you, please reset your password immediately.</p>`
+        );
+      } catch (mailErr: any) {
+        logger.error(`Failed to send login alert email: ${mailErr.message}`);
+      }
 
       // Exclude password from the user object
       const { password: _, ...userWithoutPassword } = user;
@@ -84,13 +89,17 @@ export const authController = {
       });
 
       // Send welcome email
-      await emailService.sendMail(
-        user.email,
-        'Welcome to VendorBridge ERP',
-        `<h3>Welcome to VendorBridge ERP, ${user.firstName}!</h3>
-         <p>Your account has been successfully registered with the role of <strong>${user.role}</strong>.</p>
-         <p>You can now log in and manage your procurement workflows.</p>`
-      );
+      try {
+        await emailService.sendMail(
+          user.email,
+          'Welcome to VendorBridge ERP',
+          `<h3>Welcome to VendorBridge ERP, ${user.firstName}!</h3>
+           <p>Your account has been successfully registered with the role of <strong>${user.role}</strong>.</p>
+           <p>You can now log in and manage your procurement workflows.</p>`
+        );
+      } catch (mailErr: any) {
+        logger.error(`Failed to send welcome registration email: ${mailErr.message}`);
+      }
 
       // Exclude password field from the response
       const { password: _, ...userWithoutPassword } = user;
@@ -128,16 +137,20 @@ export const authController = {
       const resetLink = `http://localhost:5173/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
 
       // Send reset password email
-      await emailService.sendMail(
-        user.email,
-        'VendorBridge Password Reset Request',
-        `<h3>Password Reset Request</h3>
-         <p>Hello ${user.firstName},</p>
-         <p>You requested a password reset for your VendorBridge account.</p>
-         <p>Please click the link below to reset your password. This link is valid for 15 minutes:</p>
-         <p><a href="${resetLink}" target="_blank" style="display:inline-block;padding:10px 20px;background-color:#4F46E5;color:#ffffff;text-decoration:none;border-radius:5px;">Reset Password</a></p>
-         <p>If you did not request this change, you can safely ignore this email.</p>`
-      );
+      try {
+        await emailService.sendMail(
+          user.email,
+          'VendorBridge Password Reset Request',
+          `<h3>Password Reset Request</h3>
+           <p>Hello ${user.firstName},</p>
+           <p>You requested a password reset for your VendorBridge account.</p>
+           <p>Please click the link below to reset your password. This link is valid for 15 minutes:</p>
+           <p><a href="${resetLink}" target="_blank" style="display:inline-block;padding:10px 20px;background-color:#4F46E5;color:#ffffff;text-decoration:none;border-radius:5px;">Reset Password</a></p>
+           <p>If you did not request this change, you can safely ignore this email.</p>`
+        );
+      } catch (mailErr: any) {
+        logger.error(`Failed to send recovery email: ${mailErr.message}`);
+      }
 
       res.json({
         message: 'If an account with that email exists, a password reset link has been sent.',
@@ -176,14 +189,18 @@ export const authController = {
       });
 
       // Send confirmation email
-      await emailService.sendMail(
-        user.email,
-        'VendorBridge Password Changed',
-        `<h3>Password Reset Successful</h3>
-         <p>Hello ${user.firstName},</p>
-         <p>Your VendorBridge account password was successfully reset.</p>
-         <p>If you did not make this change, please contact support immediately.</p>`
-      );
+      try {
+        await emailService.sendMail(
+          user.email,
+          'VendorBridge Password Changed',
+          `<h3>Password Reset Successful</h3>
+           <p>Hello ${user.firstName},</p>
+           <p>Your VendorBridge account password was successfully reset.</p>
+           <p>If you did not make this change, please contact support immediately.</p>`
+        );
+      } catch (mailErr: any) {
+        logger.error(`Failed to send password changed confirmation email: ${mailErr.message}`);
+      }
 
       res.json({
         message: 'Password reset successful'

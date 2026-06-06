@@ -170,6 +170,15 @@ export const rfqController = {
         where: { id },
         include: {
           lineItems: true,
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              role: true
+            }
+          },
           assignments: {
             include: {
               vendor: {

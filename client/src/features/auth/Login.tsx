@@ -7,67 +7,107 @@ import Button from '../../components/common/Button';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('PROCUREMENT_OFFICER');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [apiError, setApiError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validate = () => {
+    let isValid = true;
+    setEmailError('');
+    setPasswordError('');
+    setApiError('');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError('Email address is required');
+      isValid = false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address');
+      isValid = false;
+    }
+
+    if (!password) {
+      setPasswordError('Password is required');
+      isValid = false;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, role);
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 
+                  err.response?.data?.errors?.[0]?.message || 
+                  'Authentication failed. Please check credentials.';
+      setApiError(msg);
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#070a0e] p-4">
-      <div className="w-full max-w-md bg-slate-900/60 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-md">
+    <div className="min-h-screen flex items-center justify-center bg-white p-6 font-sans">
+      <div className="w-full max-w-md bg-white border border-neutral-200/80 rounded-2xl p-8 shadow-premium select-none">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 mx-auto mb-4 flex items-center justify-center text-emerald-400 font-bold text-xl">
+          <div className="w-12 h-12 rounded-xl bg-neutral-950 text-white mx-auto mb-4 flex items-center justify-center font-bold text-lg shadow-sm">
             VB
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Login to VendorBridge</h2>
-          <p className="text-sm text-slate-500 mt-1.5">Enter details to access procurement workspace</p>
+          <h2 className="text-xl font-bold tracking-tight text-neutral-900">Sign in to VendorBridge</h2>
+          <p className="text-sm text-neutral-500 mt-1">Enter your details to access the procurement portal</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {apiError && (
+          <div className="mb-5 p-3.5 bg-accent-dangerBg border border-accent-danger/20 text-accent-danger text-xs font-medium rounded-xl animate-fade-in">
+            {apiError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <Input 
-            label="Email Address*" 
+            label="Email Address" 
             type="email" 
             placeholder="e.g. officer@organization.com" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            error={emailError}
+            disabled={loading}
             required
           />
           <Input 
-            label="Password*" 
+            label="Password" 
             type="password" 
             placeholder="••••••••" 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            error={passwordError}
+            disabled={loading}
             required
           />
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-xs font-medium text-slate-400">Select Mock Role</label>
-            <select 
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="bg-[#0e1318] border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
-            >
-              <option value="PROCUREMENT_OFFICER">Procurement Officer</option>
-              <option value="VENDOR">Vendor</option>
-              <option value="MANAGER">Manager / Approver</option>
-              <option value="ADMIN">Admin</option>
-            </select>
+
+          <div className="flex justify-end text-xs pt-1">
+            <Link to="/forgot-password" className="text-neutral-500 hover:text-neutral-900 transition font-medium">Forgot password?</Link>
           </div>
 
-          <div className="flex justify-between items-center text-xs">
-            <Link to="/forgot-password" className="text-emerald-400 hover:text-emerald-300 font-medium">Forgot password?</Link>
-          </div>
-
-          <Button type="submit" className="w-full py-3">Login Button</Button>
+          <Button type="submit" className="w-full py-2.5 mt-2" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
+          </Button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-800 text-center text-xs text-slate-400">
-          New to the portal? <Link to="/register" className="text-emerald-400 hover:text-emerald-300 font-medium ml-1">Create an Account</Link>
+        <div className="mt-8 pt-6 border-t border-neutral-100 text-center text-xs text-neutral-500">
+          New to the portal? <Link to="/register" className="text-neutral-950 hover:underline font-semibold ml-1">Create an Account</Link>
         </div>
       </div>
     </div>
   );
 }
+

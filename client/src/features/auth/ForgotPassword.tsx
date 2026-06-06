@@ -28,32 +28,32 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#070a0e] p-4">
-      <div className="w-full max-w-md bg-slate-900/60 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-md">
+    <div className="min-h-screen flex items-center justify-center bg-white p-6 font-sans">
+      <div className="w-full max-w-md bg-white border border-neutral-200/80 rounded-2xl p-8 shadow-premium select-none">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold tracking-tight">Forgot Password?</h2>
-          <p className="text-sm text-slate-500 mt-1.5">Enter email to recover access</p>
+          <h2 className="text-xl font-bold tracking-tight text-neutral-900">Forgot Password?</h2>
+          <p className="text-sm text-neutral-500 mt-1">Enter your registered email to recover access</p>
         </div>
 
-         {submitted ? (
-          <div className="text-center p-6 bg-emerald-950/20 border border-emerald-800/35 rounded-xl text-emerald-400 text-sm">
-            Recovery link sent to your registered email ID. Check inbox.
+        {submitted ? (
+          <div className="p-6 bg-accent-successBg border border-accent-success/20 rounded-xl text-neutral-900 text-sm">
+            <p className="font-medium mb-3">Recovery link has been generated.</p>
             {resetLink && (
-              <div className="mt-4 p-3 bg-slate-950/40 border border-slate-800 rounded-lg text-xs break-all text-left">
-                <span className="text-slate-400 block mb-1">Development Link:</span>
-                <a href={resetLink} id="dev-reset-link" className="underline text-emerald-400 hover:text-emerald-300 font-medium">
+              <div className="mt-4 p-3 bg-white border border-neutral-200 rounded-lg text-xs break-all text-left">
+                <span className="text-neutral-500 font-semibold block mb-1">Development Link:</span>
+                <a href={resetLink} id="dev-reset-link" className="underline text-[#171717] hover:text-neutral-600 font-medium">
                   {resetLink}
                 </a>
               </div>
             )}
-            <div className="mt-6">
-              <Link to="/login" className="text-xs font-semibold uppercase text-emerald-400 hover:underline">Back to Login</Link>
+            <div className="mt-6 text-center">
+              <Link to="/login" className="text-xs font-bold uppercase text-neutral-900 hover:underline">Back to Login</Link>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 bg-rose-950/20 border border-rose-800/35 rounded-xl text-rose-400 text-xs text-center">
+              <div className="p-3 bg-accent-dangerBg border border-accent-danger/20 rounded-xl text-accent-danger text-xs text-center font-medium">
                 {error}
               </div>
             )}
@@ -66,11 +66,11 @@ export default function ForgotPassword() {
               required
               disabled={loading}
             />
-            <Button type="submit" className="w-full py-3" disabled={loading}>
-              {loading ? 'Sending...' : 'Send Reset Code'}
+            <Button type="submit" className="w-full py-2.5 mt-2" disabled={loading}>
+              {loading ? 'Sending...' : 'Send Reset Link'}
             </Button>
-            <div className="text-center text-xs">
-              <Link to="/login" className="text-slate-400 hover:text-slate-200">Cancel & Return</Link>
+            <div className="text-center text-xs pt-1">
+              <Link to="/login" className="text-neutral-500 hover:text-neutral-950 font-medium">Cancel & Return</Link>
             </div>
           </form>
         )}
@@ -78,3 +78,4 @@ export default function ForgotPassword() {
     </div>
   );
 }
+

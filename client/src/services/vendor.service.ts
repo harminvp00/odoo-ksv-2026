@@ -4,4 +4,7 @@ export const vendorService = {
   getVendors: (filters?: any) => api.get('/vendors', { params: filters }),
   registerVendor: (data: any) => api.post('/vendors', data),
   getVendorDetails: (id: string) => api.get(`/vendors/${id}`),
+  updateVendorStatus: (id: string, status: string) => api.patch(`/vendors/${id}/status`, { status }),
+  getUnlinkedUsers: () => api.get('/vendors/unlinked-users'),
 };
+

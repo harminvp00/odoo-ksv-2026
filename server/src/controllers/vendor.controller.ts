@@ -57,6 +57,26 @@ export const vendorController = {
     }
   },
 
+  getUnlinkedUsers: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const users = await prisma.user.findMany({
+        where: {
+          role: 'VENDOR',
+          vendorProfile: null
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true
+        }
+      });
+      res.json(users);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   registerVendor: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { name, category, gstNo, contactNo, address, userId } = req.body;
@@ -92,6 +112,36 @@ export const vendorController = {
       });
 
       res.status(201).json(vendor);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  getVendorById: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      const vendor = await prisma.vendor.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              role: true
+            }
+          }
+        }
+      });
+
+      if (!vendor) {
+        return res.status(404).json({ message: 'Vendor not found' });
+      }
+
+      res.json(vendor);
     } catch (err) {
       next(err);
     }

@@ -15,6 +15,22 @@ router.get(
   vendorController.getVendors
 );
 
+// GET /unlinked-users - Retrieve vendor users without profile (Admin, Procurement Officer)
+router.get(
+  '/unlinked-users',
+  authMiddleware,
+  roleMiddleware(['ADMIN', 'PROCUREMENT_OFFICER']),
+  vendorController.getUnlinkedUsers
+);
+
+// GET /:id - Get a specific vendor's details
+router.get(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['ADMIN', 'PROCUREMENT_OFFICER', 'MANAGER']),
+  vendorController.getVendorById
+);
+
 // POST / - Register new vendor (Admin, Procurement Officer)
 router.post(
   '/',

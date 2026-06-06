@@ -36,16 +36,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         {notifications.map((n) => (
           <div
             key={n.id}
-            className={`px-4 py-3 rounded-lg border text-sm shadow-xl flex items-center justify-between transition-all duration-300 ${
-              n.type === 'success' ? 'bg-emerald-950/80 border-emerald-500/35 text-emerald-400' :
-              n.type === 'warning' ? 'bg-amber-950/80 border-amber-500/35 text-amber-400' :
-              'bg-slate-900/90 border-slate-800 text-slate-300'
+            className={`px-4 py-3 rounded-xl border text-sm shadow-premium flex items-center justify-between transition-all duration-300 select-none animate-slide-in ${
+              n.type === 'success' ? 'bg-accent-successBg border-accent-success/20 text-neutral-900' :
+              n.type === 'warning' ? 'bg-accent-warningBg border-accent-warning/20 text-neutral-900' :
+              'bg-white border-neutral-200 text-neutral-900'
             }`}
           >
-            <span>{n.message}</span>
+            <span className="font-medium">{n.message}</span>
           </div>
         ))}
       </div>
     </NotificationContext.Provider>
   );
 }
+
