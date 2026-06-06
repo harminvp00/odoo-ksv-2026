@@ -8,10 +8,12 @@ import poRoutes from './po.routes';
 import invoiceRoutes from './invoice.routes';
 import activityRoutes from './activity.routes';
 import reportRoutes from './report.routes';
+import dashboardRoutes from './dashboard.routes';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/dashboard', dashboardRoutes);
 router.use('/vendors', vendorRoutes);
 router.use('/rfqs', rfqRoutes);
 router.use('/quotations', quotationRoutes);
