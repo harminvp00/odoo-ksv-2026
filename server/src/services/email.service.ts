@@ -28,7 +28,7 @@ transporter.verify((error, success) => {
 });
 
 export const emailService = {
-  sendMail: async (to: string, subject: string, htmlContent: string) => {
+  sendMail: async (to: string, subject: string, htmlContent: string, attachments?: any[]) => {
     try {
       logger.info(`Sending email to ${to} with subject "${subject}"`);
       
@@ -37,6 +37,7 @@ export const emailService = {
         to,
         subject,
         html: htmlContent,
+        attachments
       });
 
       logger.info(`Email sent successfully: ${info.messageId}`);
