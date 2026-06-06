@@ -246,6 +246,13 @@ export const quotationController = {
   compareQuotations: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { rfqId } = req.params;
+      const { sortBy, sortOrder = 'asc', status } = req.query;
+
+      // 1. Determine allowed status filter
+      let statusFilter: any = { in: ['SUBMITTED', 'SELECTED'] };
+      if (status && typeof status === 'string') {
+        statusFilter = status;
+      }
 
       const [rfq, quotations] = await Promise.all([
         prisma.rFQ.findUnique({
@@ -253,7 +260,7 @@ export const quotationController = {
           include: { lineItems: true }
         }),
         prisma.quotation.findMany({
-          where: { rfqId, status: { in: ['SUBMITTED', 'SELECTED'] } },
+          where: { rfqId, status: statusFilter },
           include: {
             lineItems: true,
             vendor: {
@@ -271,7 +278,82 @@ export const quotationController = {
         return res.status(404).json({ message: 'RFQ not found' });
       }
 
-      // Structure a side-by-side comparison report payload
+      // 2. Perform highlighting calculations if there are any quotations
+      let minGrandTotal = Infinity;
+      let minDeliveryDays = Infinity;
+      let maxRating = -Infinity;
+      const lowestUnitPricePerItem: Record<string, number> = {};
+
+      if (quotations.length > 0) {
+        minGrandTotal = Math.min(...quotations.map(q => Number(q.grandTotal)));
+        minDeliveryDays = Math.min(...quotations.map(q => q.deliveryDays));
+        maxRating = Math.max(...quotations.map(q => q.vendor?.rating || 0));
+
+        for (const q of quotations) {
+          for (const li of q.lineItems) {
+            const price = Number(li.unitPrice);
+            if (lowestUnitPricePerItem[li.item] === undefined || price < lowestUnitPricePerItem[li.item]) {
+              lowestUnitPricePerItem[li.item] = price;
+            }
+          }
+        }
+      }
+
+      // 3. Map quotations, injecting highlighting flags
+      let mappedQuotations = quotations.map(q => {
+        const grandTotalVal = Number(q.grandTotal);
+        const ratingVal = q.vendor?.rating || 0;
+
+        return {
+          quotationId: q.id,
+          vendor: q.vendor,
+          subtotal: q.subtotal,
+          gstPercentage: q.gstPercentage,
+          gstAmount: q.gstAmount,
+          grandTotal: q.grandTotal,
+          deliveryDays: q.deliveryDays,
+          paymentTerms: q.paymentTerms,
+          status: q.status,
+          createdAt: q.createdAt,
+          updatedAt: q.updatedAt,
+          isLowestPrice: grandTotalVal === minGrandTotal,
+          isFastestDelivery: q.deliveryDays === minDeliveryDays,
+          isHighestRated: ratingVal === maxRating && maxRating > 0,
+          lineItems: q.lineItems.map(li => {
+            const unitPriceVal = Number(li.unitPrice);
+            return {
+              id: li.id,
+              item: li.item,
+              qty: li.qty,
+              unit: li.unit,
+              unitPrice: li.unitPrice,
+              totalVal: li.totalVal,
+              isLowestUnitPrice: unitPriceVal === lowestUnitPricePerItem[li.item]
+            };
+          })
+        };
+      });
+
+      // 4. Sorting logic
+      if (sortBy && typeof sortBy === 'string') {
+        const orderMultiplier = sortOrder === 'desc' ? -1 : 1;
+
+        mappedQuotations.sort((a, b) => {
+          if (sortBy === 'price') {
+            return (Number(a.grandTotal) - Number(b.grandTotal)) * orderMultiplier;
+          }
+          if (sortBy === 'delivery') {
+            return (a.deliveryDays - b.deliveryDays) * orderMultiplier;
+          }
+          if (sortBy === 'rating') {
+            const ratingA = a.vendor?.rating || 0;
+            const ratingB = b.vendor?.rating || 0;
+            return (ratingA - ratingB) * orderMultiplier;
+          }
+          return 0;
+        });
+      }
+
       const comparisonReport = {
         rfq: {
           id: rfq.id,
@@ -285,23 +367,7 @@ export const quotationController = {
             unit: item.unit
           }))
         },
-        quotations: quotations.map(q => ({
-          quotationId: q.id,
-          vendor: q.vendor,
-          subtotal: q.subtotal,
-          gstAmount: q.gstAmount,
-          grandTotal: q.grandTotal,
-          deliveryDays: q.deliveryDays,
-          paymentTerms: q.paymentTerms,
-          status: q.status,
-          lineItems: q.lineItems.map(li => ({
-            item: li.item,
-            qty: li.qty,
-            unit: li.unit,
-            unitPrice: li.unitPrice,
-            totalVal: li.totalVal
-          }))
-        }))
+        quotations: mappedQuotations
       };
 
       res.json(comparisonReport);
