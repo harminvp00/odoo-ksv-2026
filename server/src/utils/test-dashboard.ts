@@ -199,7 +199,13 @@ async function runTests() {
     if (!assignedRFQsCard || assignedRFQsCard.value !== 1) throw new Error(`Expected Assigned RFQs count 1, got ${assignedRFQsCard?.value}`);
     if (!totalRevCard || totalRevCard.value !== '$1180.00') throw new Error(`Expected Total Revenue $1180.00, got ${totalRevCard?.value}`);
     
-    console.log('✓ VENDOR dashboard calculations and lists verified successfully.');
+    // Assert Vendor quickActions
+    const viewRFQsAction = vendorDash.quickActions.find((a: any) => a.action === 'view_rfqs');
+    const submitQuoteAction = vendorDash.quickActions.find((a: any) => a.action === 'submit_quotation');
+    if (!viewRFQsAction || viewRFQsAction.label !== 'View RFQs') throw new Error('Expected View RFQs quick action');
+    if (!submitQuoteAction || submitQuoteAction.label !== 'Submit Quotation') throw new Error('Expected Submit Quotation quick action');
+
+    console.log('✓ VENDOR dashboard calculations, lists, and quick actions verified successfully.');
 
     // 11. Fetch dashboard for MANAGER
     console.log('\nFetching dashboard for MANAGER...');
@@ -229,7 +235,13 @@ async function runTests() {
     if (!pendingAppCard || pendingAppCard.value !== 1) throw new Error(`Expected Pending Approvals count 1, got ${pendingAppCard?.value}`);
     if (!totalSpendCard || totalSpendCard.value !== '$1180.00') throw new Error(`Expected Total Spend $1180.00, got ${totalSpendCard?.value}`);
     
-    console.log('✓ MANAGER dashboard calculations, lists, and chain verification verified successfully.');
+    // Assert Manager quickActions
+    const reviewAppAction = managerDash.quickActions.find((a: any) => a.action === 'review_approvals');
+    const viewReportsAction = managerDash.quickActions.find((a: any) => a.action === 'view_reports');
+    if (!reviewAppAction || reviewAppAction.label !== 'Review Approvals') throw new Error('Expected Review Approvals quick action');
+    if (!viewReportsAction || viewReportsAction.label !== 'View Reports') throw new Error('Expected View Reports quick action');
+
+    console.log('✓ MANAGER dashboard calculations, lists, chain verification, and quick actions verified successfully.');
 
   } finally {
     // Cleanup order: Invoices -> POs -> ApprovalChains -> Approvals -> Quotations -> RFQAssignments -> RFQs -> Vendors -> Users
