@@ -10,3 +10,19 @@ export const registerSchema = z.object({
   country: z.string().optional(),
   additionalInfo: z.string().optional()
 });
+
+export const loginSchema = z.object({
+  email: z.string().email('Invalid email address format'),
+  password: z.string().min(1, 'Password is required')
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address format')
+});
+
+export const resetPasswordSchema = z.object({
+  email: z.string().email('Invalid email address format'),
+  token: z.string().min(1, 'Reset token is required'),
+  password: z.string().min(6, 'New password must be at least 6 characters long')
+});
+
